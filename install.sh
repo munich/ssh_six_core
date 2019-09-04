@@ -199,14 +199,40 @@ fi
 
 success "Installed system updates!"
 
-heading "Installing ARK Core..."
+heading "Installing Core..."
 
-yarn global add @arkecosystem/core
+shopt -s expand_aliases
+alias ark="/home/bridgechain/core-bridgechain/packages/core/bin/run"
+echo 'alias testing="/home/bridgechain/core-bridgechain/packages/core/bin/run"' >> ~/.bashrc
+
+rm -rf "/home/bridgechain/core-bridgechain"
+git clone "https://github.com/munich/ssh_six_core.git" "/home/bridgechain/core-bridgechain" || FAILED="Y"
+if [ "$FAILED" == "Y" ]; then
+    echo "Failed to fetch core repo with origin 'https://github.com/munich/ssh_six_core.git'"
+
+    exit 1
+fi
+
+cd "/home/bridgechain/core-bridgechain"
+HAS_REMOTE=$(git branch -a | fgrep -o "remotes/origin/chore/bridgechain-changes")
+if [ ! -z "" ]; then
+    git checkout chore/bridgechain-changes
+fi
+
+YARN_SETUP="N"
+while [ "$YARN_SETUP" == "N" ]; do
+  YARN_SETUP="Y"
+  yarn setup || YARN_SETUP="N"
+done
+rm -rf "$HOME/.config/@tst"
+rm -rf "$HOME/.config/@testing"
+rm -rf "$HOME/.config/testing-core"
+
 echo 'export PATH=$(yarn global bin):$PATH' >> ~/.bashrc
 export PATH=$(yarn global bin):$PATH
 ark config:publish
 
-success "Installed ARK Core!"
+success "Installed Core!"
 
 # setup postgres username, password and database
 read -p "Would you like to configure the database? [y/N]: " choice
@@ -252,5 +278,3 @@ if [[ "$choice" =~ ^(yes|y|Y) ]]; then
         sudo -i -u postgres psql -c "CREATE DATABASE ${databaseName} WITH OWNER ${databaseUsername};"
     fi
 fi
-
-exec "$BASH"
